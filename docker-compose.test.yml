@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: calendar-postgres-test
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "5433:5432"
+    networks:
+      - calendar-test-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: calendar-redis-test
+    ports:
+      - "6380:6379"
+    networks:
+      - calendar-test-network
+
+networks:
+  calendar-test-network:
+    driver: bridge

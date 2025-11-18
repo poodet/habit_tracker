@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: calendar-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-calendar_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar_password}
+      POSTGRES_DB: ${POSTGRES_DB:-calendar_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - calendar-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-calendar_user} -d ${POSTGRES_DB:-calendar_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: calendar-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - calendar-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: calendar-pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "5050:80"
+  #   networks:
+  #     - calendar-network
+  #   depends_on:
+  #     - postgres
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: calendar-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - calendar-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: calendar-backend
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: development
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-calendar_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar_password}
+      POSTGRES_DB: ${POSTGRES_DB:-calendar_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - calendar-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: calendar-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - calendar-network
+    depends_on:
+      - backend
+    command: npm run dev
+  # admin:
+  #   build:
+  #     context: ./admin
+  #     dockerfile: Dockerfile
+  #   container_name: calendar-admin
+  #   ports:
+  #     - "3002:3002"
+  #   environment:
+  #     POSTGRES_HOST: postgres
+  #     POSTGRES_PORT: 5432
+  #     POSTGRES_USER: ${POSTGRES_USER:-calendar_user}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar_password}
+  #     POSTGRES_DB: ${POSTGRES_DB:-calendar_db}
+  #     ADMIN_PORT: 3002
+  #   networks:
+  #     - calendar-network
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./admin:/app
+  #     - /app/node_modules
+  #   command: npm run dev
+
+networks:
+  calendar-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
