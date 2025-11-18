@@ -84,6 +84,7 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      WATCHPACK_POLLING: 'true'
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -107,6 +108,8 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}/api
+      # Enable watchpack polling so file changes on Windows are detected inside the container
+      WATCHPACK_POLLING: 'true'
     volumes:
       - ./frontend:/app
       - /app/node_modules
