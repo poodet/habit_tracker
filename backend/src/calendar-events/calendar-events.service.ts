@@ -5,6 +5,7 @@ import { CalendarEvent } from './entities/calendar-event.entity';
 import { CreateCalendarEventDto } from './dto/create-calendar-event.dto';
 import { UpdateCalendarEventDto } from './dto/update-calendar-event.dto';
 import { ObjectDefinitionsService } from '../object-definitions/object-definitions.service';
+import { SchemaValidationService } from '../common/schema-validation.service';
 
 @Injectable()
 export class CalendarEventsService {
@@ -12,11 +13,21 @@ export class CalendarEventsService {
         @InjectRepository(CalendarEvent)
         private calendarEventsRepository: Repository<CalendarEvent>,
         private objectDefinitionsService: ObjectDefinitionsService,
+        private schemaValidationService: SchemaValidationService,
     ) { }
 
     async create(userId: string, createCalendarEventDto: CreateCalendarEventDto): Promise<CalendarEvent> {
         // Verify that the object definition exists and belongs to the user
-        await this.objectDefinitionsService.findOne(createCalendarEventDto.objectDefinitionId, userId);
+        const objectDefinition = await this.objectDefinitionsService.findOne(
+            createCalendarEventDto.objectDefinitionId,
+            userId
+        );
+
+        // Validate that the event data matches the object definition schema
+        this.schemaValidationService.validateData(
+            objectDefinition.schema,
+            createCalendarEventDto.data
+        );
 
         const calendarEvent = this.calendarEventsRepository.create({
             ...createCalendarEventDto,
@@ -57,11 +68,25 @@ export class CalendarEventsService {
     ): Promise<CalendarEvent> {
         const calendarEvent = await this.findOne(id, userId);
 
+        let objectDefinition = calendarEvent.objectDefinition;
+
+        // If changing object definition, verify it exists
         if (
             updateCalendarEventDto.objectDefinitionId &&
             updateCalendarEventDto.objectDefinitionId !== calendarEvent.objectDefinitionId
         ) {
-            await this.objectDefinitionsService.findOne(updateCalendarEventDto.objectDefinitionId, userId);
+            objectDefinition = await this.objectDefinitionsService.findOne(
+                updateCalendarEventDto.objectDefinitionId,
+                userId
+            );
+        }
+
+        // If updating data, validate against schema
+        if (updateCalendarEventDto.data) {
+            this.schemaValidationService.validateData(
+                objectDefinition.schema,
+                updateCalendarEventDto.data
+            );
         }
 
         Object.assign(calendarEvent, updateCalendarEventDto);

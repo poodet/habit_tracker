@@ -4,18 +4,23 @@ import { Repository } from 'typeorm';
 import { ObjectDefinition } from './entities/object-definition.entity';
 import { CreateObjectDefinitionDto } from './dto/create-object-definition.dto';
 import { UpdateObjectDefinitionDto } from './dto/update-object-definition.dto';
+import { SchemaValidationService } from '../common/schema-validation.service';
 
 @Injectable()
 export class ObjectDefinitionsService {
     constructor(
         @InjectRepository(ObjectDefinition)
         private objectDefinitionsRepository: Repository<ObjectDefinition>,
+        private schemaValidationService: SchemaValidationService,
     ) { }
 
     async create(
         userId: string,
         createObjectDefinitionDto: CreateObjectDefinitionDto,
     ): Promise<ObjectDefinition> {
+        // Validate that the schema is a valid JSON Schema
+        this.schemaValidationService.validateSchema(createObjectDefinitionDto.schema);
+
         const objectDefinition = this.objectDefinitionsRepository.create({
             ...createObjectDefinitionDto,
             userId,
@@ -43,6 +48,12 @@ export class ObjectDefinitionsService {
         updateObjectDefinitionDto: UpdateObjectDefinitionDto,
     ): Promise<ObjectDefinition> {
         const objectDefinition = await this.findOne(id, userId);
+
+        // If updating schema, validate it
+        if (updateObjectDefinitionDto.schema) {
+            this.schemaValidationService.validateSchema(updateObjectDefinitionDto.schema);
+        }
+
         Object.assign(objectDefinition, updateObjectDefinitionDto);
         return this.objectDefinitionsRepository.save(objectDefinition);
     }
