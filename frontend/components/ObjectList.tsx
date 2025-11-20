@@ -1,63 +1,72 @@
 'use client';
 
 import { ObjectDefinition } from '@/types';
+import CalendarHabit from './CalendarHabit';
 
 interface ObjectListProps {
     objects: ObjectDefinition[];
     selectedObjectId?: string;
     onSelectObject: (objectId: string) => void;
+    onCreateNew: () => void;
 }
 
-export default function ObjectList({ objects, selectedObjectId, onSelectObject }: ObjectListProps) {
+export default function ObjectList({ objects, selectedObjectId, onSelectObject, onCreateNew }: ObjectListProps) {
     return (
-        <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">My Objects</h2>
-
-            {objects.length === 0 ? (
-                <div className="text-sm text-gray-500 text-center py-8">
-                    <p>No objects yet.</p>
-                    <p className="mt-2">Create your first object to get started!</p>
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    {objects.map((object) => (
-                        <button
-                            key={object.id}
-                            onClick={() => onSelectObject(object.id)}
-                            className={`w-full text-left p-3 rounded-lg transition-colors ${selectedObjectId === object.id
+        <div className="flex flex-col w-full max-w-sm bg-gray-50 border-r border-gray-200 p-4 h-full">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">My Habits</h2>
+            <div className="overflow-y-auto min-h-0">
+                {objects.length === 0 ? (
+                    <div className="text-sm text-gray-500 text-center py-8">
+                        <p>No habits yet.</p>
+                        <p className="mt-2">Create your first habit to get started!</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-flow-rows grid-cols-2 gap-4">
+                        {objects.map((object) => (
+                            <button
+                                key={object.id}
+                                onClick={() => onSelectObject(object.id)}
+                                className={`aspect-square flex flex-col items-center justify-center text-center p-3 rounded-lg col-span-1 transition-colors ${selectedObjectId === object.id
                                     ? 'bg-blue-100 border-2 border-blue-500'
                                     : 'bg-white border border-gray-200 hover:bg-gray-100'
-                                }`}
-                        >
-                            <div className="flex items-center gap-2">
-                                {object.icon && (
-                                    <span className="text-2xl">{object.icon}</span>
-                                )}
-                                {object.color && !object.icon && (
-                                    <div
-                                        className="w-4 h-4 rounded-full"
-                                        style={{ backgroundColor: object.color }}
-                                    />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-gray-900 truncate">
-                                        {object.name}
-                                    </h3>
-                                    {object.description && (
-                                        <p className="text-xs text-gray-500 truncate">
-                                            {object.description}
-                                        </p>
+                                    }`}
+                            >
+                                <div className="flex flex-col items-center gap-2">
+                                    {object.icon && (
+                                        <span className="text-3xl">{object.icon}</span>
                                     )}
+                                    {object.color && !object.icon && (
+                                        <div
+                                            className="w-8 h-8 rounded-full"
+                                            style={{ backgroundColor: object.color }}
+                                        />
+                                    )}
+                                    <div className="mt-1">
+                                        <h3 className="font-medium text-gray-900 text-center">
+                                            {object.name}
+                                        </h3>
+                                        {object.description && (
+                                            <p className="text-xs text-gray-500 text-center">
+                                                {object.description}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
 
-            <button className="w-full mt-4 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                + New Object
-            </button>
+
+            <div className="mt-4">
+                <button
+                    onClick={onCreateNew}
+                    className="block w-full sm:w-3/4 mx-auto p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-medium text-center"
+                >
+                    + New Habit
+                </button>
+            </div>
         </div>
     );
 }
