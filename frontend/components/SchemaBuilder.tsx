@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SchemaField {
     name: string;
@@ -15,9 +15,10 @@ interface SchemaField {
 
 interface SchemaBuilderProps {
     onSchemaChange: (schema: any) => void;
+    object?: any;
 }
 
-export default function SchemaBuilder({ onSchemaChange }: SchemaBuilderProps) {
+export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderProps) {
     const [fields, setFields] = useState<SchemaField[]>([]);
 
     const addField = () => {
@@ -41,6 +42,43 @@ export default function SchemaBuilder({ onSchemaChange }: SchemaBuilderProps) {
         setFields(newFields);
         updateSchema(newFields);
     };
+
+    useEffect(() => {
+        if (!object || !object.schema || !object.schema.properties) return;
+
+        const props = object.schema.properties || {};
+        const requiredArr: string[] = object.schema.required || [];
+
+        const parsed: SchemaField[] = Object.entries(props).map(([name, schema]: [string, any]) => {
+            const field: SchemaField = {
+                name,
+                type: 'string',
+                required: requiredArr.includes(name),
+            };
+
+            if (schema.type === 'number') {
+                field.type = 'number';
+                field.min = schema.minimum;
+                field.max = schema.maximum;
+            } else if (schema.type === 'boolean') {
+                field.type = 'boolean';
+            } else if (schema.type === 'array') {
+                field.type = 'array';
+            } else if (schema.type === 'string' && schema.format === 'date') {
+                field.type = 'date';
+            } else if (Array.isArray(schema.enum)) {
+                field.type = 'enum';
+                field.enumValues = schema.enum;
+                field.enumRaw = schema.enum.join(', ');
+            }
+
+            if (schema.description) field.description = schema.description;
+            return field;
+        });
+
+        // Keep parent in sync with the original schema (optional)
+        onSchemaChange(object.schema);
+    }, [object]);
 
     const updateSchema = (currentFields: SchemaField[]) => {
         const properties: any = {};

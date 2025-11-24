@@ -6,21 +6,27 @@ import { objectDefinitionsApi, calendarEventsApi } from '@/lib/api';
 import ObjectList from '@/components/ObjectList';
 import Calendar from '@/components/Calendar';
 import CreateObjectModal from '@/components/CreateObjectModal';
+import HabitSettingsModal from '@/components/HabitSettingsModal';
 import CreateEventModal from '@/components/CreateEventModal';
 import CalendarHabit from '@/components/CalendarHabit';
 import DeleteEventModal from '@/components/DeleteEventModal';
+import EditEventModal from '@/components/EditEventModal';
 
 export default function CalendarPage() {
     const [objects, setObjects] = useState<ObjectDefinition[]>([]);
     const [events, setEvents] = useState<CalendarEvent[]>([]);
-    const [selectedObjectId, setSelectedObjectId] = useState<string | undefined>();
+    const [selectedObjectId, setSelectedObjectId] = useState<string | undefined>(); // todo - rename Habit
+    const [selectedHabit, setSelectedHabit] = useState<ObjectDefinition | undefined>();
     const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | undefined>();
     const [selectedEventTitle, setSelectedEventTitle] = useState<string | undefined>(undefined);
     const [deleteOpen, setShowDeleteEventModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateObjectModal, setShowCreateObjectModal] = useState(false);
     const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+    const [showEditEventModal, setShowEditEventModal] = useState(false);
+    const [showHabitSettingModal, setShowHabitSettingModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
     // Fetch data when component mounts
@@ -73,11 +79,14 @@ export default function CalendarPage() {
 
     const handleSelectObject = (objectId: string) => {
         // Toggle selection: if already selected, deselect it
+        // TODO - only select object, not id ?
         setSelectedObjectId(selectedObjectId === objectId ? undefined : objectId);
+        const habitToEdit = objects.find(o => o.id === objectId);
+        setSelectedHabit(habitToEdit);
     };
 
 
-    // Create Event methods
+    // Create and Edit Event methods
 
     const handleCreateEvent = (date?: Date) => {
         setSelectedDate(date);
@@ -88,13 +97,44 @@ export default function CalendarPage() {
         await refreshEvents();
     }, [refreshEvents]);
 
+    const handleEditEvent = (id: string) => {
+        setSelectedEventId(id);
+        const eventToEdit = events.find(e => e.id === id);
+        setSelectedEvent(eventToEdit);
+        if (!eventToEdit) return;
 
-    // Create Object methods
+        setSelectedDate(new Date(eventToEdit.startDate));
+        setShowEditEventModal(true);
+    }
+
+    const handleConfirmUpdateEvent = useCallback(async (data: any) => {
+        if (!selectedEventId) return;
+        await calendarEventsApi.update(selectedEventId, data);
+        await refreshEvents();
+    }, [refreshEvents, selectedEventId]);
+
+    // Create and edit Habits methods
 
     const handleConfirmCreateObject = useCallback(async (data: any) => {
         await objectDefinitionsApi.create(data);
         fetchData(); // Refresh data
     }, []);
+
+    const handleConfirmUpdateObject = useCallback(async (id: string, data: any) => {
+        await objectDefinitionsApi.update(id, data);
+        await fetchData();
+        setShowHabitSettingModal(false);
+    }, [fetchData]);
+
+    const handleHabitSetting = (habitId: string) => {
+        // For simplicity, just alerting; replace with actual settings logic
+        setSelectedObjectId(habitId);
+        const habitToEdit = objects.find(o => o.id === habitId);
+        if (!habitToEdit) return;
+
+        setSelectedHabit(habitToEdit);
+        setShowHabitSettingModal(true);
+    }
 
 
     // Global loading / error states
@@ -142,9 +182,11 @@ export default function CalendarPage() {
                     return (
                         <CalendarHabit
                             events={habitEvents}
-                            habitName={habit?.name}
+                            habit={habit}
                             onCreateEvent={handleCreateEvent}
                             onDeleteEvent={handleDeleteEvent}
+                            onEditEvent={handleEditEvent}
+                            onHabitSetting={handleHabitSetting}
                         />
                     );
                 })()
@@ -176,10 +218,37 @@ export default function CalendarPage() {
 
             <DeleteEventModal
                 isOpen={deleteOpen}
-                onClose={() => setShowDeleteEventModal(false)}
+                onClose={() => {
+                    setShowDeleteEventModal(false)
+                }
+                }
                 itemLabel={selectedEventTitle}
                 onSubmit={handleConfirmDeleteEvent}
             />
+
+            {selectedEvent && (
+                <EditEventModal
+                    isOpen={showEditEventModal}
+                    onClose={() => {
+                        setShowEditEventModal(false);
+                        setSelectedDate(undefined);
+                        setSelectedEventId(null);
+                        setSelectedEvent(undefined);
+                    }}
+                    onSubmit={handleConfirmUpdateEvent}
+                    objects={objects}
+                    selectedEvent={selectedEvent}
+                />
+            )}
+
+            <HabitSettingsModal
+                isOpen={showHabitSettingModal}
+                onClose={() => setShowHabitSettingModal(false)}
+                object={selectedHabit}
+                onSubmit={handleConfirmUpdateObject}
+            />
+
+
         </div>
     );
 }

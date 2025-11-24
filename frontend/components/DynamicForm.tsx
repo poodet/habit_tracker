@@ -6,9 +6,10 @@ interface DynamicFormProps {
     schema: any;
     initialData?: any;
     onDataChange: (data: any) => void;
+    object?: any;
 }
 
-export default function DynamicForm({ schema, initialData = {}, onDataChange }: DynamicFormProps) {
+export default function DynamicForm({ schema, initialData = {}, onDataChange, object }: DynamicFormProps) {
     const [formData, setFormData] = useState<any>(initialData);
 
     useEffect(() => {
@@ -36,7 +37,7 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange }: 
         <div className="space-y-4">
             {Object.entries(properties).map(([fieldName, fieldSchema]: [string, any]) => {
                 const isRequired = required.includes(fieldName);
-                const value = formData[fieldName];
+                const value = object?.data[fieldName] ?? formData[fieldName];
 
                 return (
                     <div key={fieldName}>
