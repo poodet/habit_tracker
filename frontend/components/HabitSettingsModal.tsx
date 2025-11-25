@@ -15,9 +15,10 @@ interface HabitSettingsModalProps {
         color?: string;
         schema: any;
     }) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
 }
 
-export default function HabitSettingsModal({ isOpen, onClose, object, onSubmit }: HabitSettingsModalProps) {
+export default function HabitSettingsModal({ isOpen, onClose, object, onSubmit, onDelete }: HabitSettingsModalProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [icon, setIcon] = useState('');
@@ -72,6 +73,28 @@ export default function HabitSettingsModal({ isOpen, onClose, object, onSubmit }
         if (!loading) {
             setError(null);
             onClose();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!object) return;
+
+        const confirmed = window.confirm('Delete this habit? This action cannot be undone.');
+        if (!confirmed) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            if (onDelete) {
+                await onDelete(object.id);
+            }
+            // Close modal on success. Parent should refresh list (see follow-up suggestion).
+            onClose();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete object definition');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -158,23 +181,37 @@ export default function HabitSettingsModal({ isOpen, onClose, object, onSubmit }
                             <SchemaBuilder onSchemaChange={setSchema} object={object} />
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-4 border-t">
-                            <button
-                                type="button"
-                                onClick={handleClose}
-                                disabled={loading}
-                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {loading ? 'Saving...' : 'Save Changes'}
-                            </button>
+                        <div className='flex justify-between border-t pt-4'>
+                            <div className="flex justify-start gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {loading ? 'Deleting...' : 'Delete Habit'}
+                                </button>
+                            </div>
+
+                            <div className="flex justify-end gap-3 ">
+                                <button
+                                    type="button"
+                                    onClick={handleClose}
+                                    disabled={loading}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    {loading ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
                         </div>
+
                     </form>
                 </div>
             </div>
