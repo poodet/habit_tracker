@@ -3,9 +3,9 @@ services:
     image: postgres:15-alpine
     container_name: calendar-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-calendar_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar_password}
-      POSTGRES_DB: ${POSTGRES_DB:-calendar_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
@@ -13,7 +13,7 @@ services:
     networks:
       - calendar-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-calendar_user} -d ${POSTGRES_DB:-calendar_db}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,18 +58,18 @@ services:
       target: development
     container_name: calendar-backend
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      - "${BACKEND_PORT}:3001"
     environment:
       NODE_ENV: development
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER:-calendar_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar_password}
-      POSTGRES_DB: ${POSTGRES_DB:-calendar_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this}
-      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
       WATCHPACK_POLLING: 'true'
     volumes:
       - ./backend:/app
@@ -93,7 +93,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}/api
+      NEXT_PUBLIC_API_URL: "http://localhost:${BACKEND_PORT}/api"
       # Enable watchpack polling so file changes on Windows are detected inside the container
       WATCHPACK_POLLING: 'true'
     volumes:
@@ -115,9 +115,9 @@ services:
   #   environment:
   #     POSTGRES_HOST: postgres
   #     POSTGRES_PORT: 5432
-  #     POSTGRES_USER: ${POSTGRES_USER:-calendar_user}
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar_password}
-  #     POSTGRES_DB: ${POSTGRES_DB:-calendar_db}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_DB}
   #     ADMIN_PORT: 3002
   #   networks:
   #     - calendar-network

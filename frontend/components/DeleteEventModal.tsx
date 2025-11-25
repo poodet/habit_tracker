@@ -13,9 +13,10 @@ interface DeleteEventModalProps {
      * Called when the user confirms the deletion.
      * Should perform the actual deletion and throw/reject on error.
      */
-    onSubmit: () => Promise<void> | void;
+    onSubmit: (id?: string) => Promise<void> | void;
     /** Optional title/label for the item being deleted (for UX) */
     itemLabel?: string;
+    eventId?: string;
 }
 
 export default function DeleteEventModal({
@@ -23,8 +24,9 @@ export default function DeleteEventModal({
     onClose,
     onSubmit,
     itemLabel,
+    eventId,
 }: DeleteEventModalProps) {
-    const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+    // const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +34,7 @@ export default function DeleteEventModal({
         setError(null);
         try {
             setLoading(true);
-            await onSubmit();
+            await onSubmit(eventId);
             onClose();
         } catch (err: any) {
             setError(err?.message || 'Failed to delete item');

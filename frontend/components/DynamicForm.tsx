@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface DynamicFormProps {
     schema: any;
@@ -16,11 +16,15 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
         setFormData(initialData);
     }, [initialData]);
 
+    // Refs to manage focus for dynamic array inputs: map fieldName -> array of refs
+    const inputRefs = useRef<Record<string, Array<HTMLInputElement | null>>>({});
+
     const handleChange = (fieldName: string, value: any) => {
         const newData = { ...formData, [fieldName]: value };
         setFormData(newData);
         onDataChange(newData);
     };
+
 
     if (!schema || !schema.properties) {
         return (
@@ -37,7 +41,12 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
         <div className="space-y-4">
             {Object.entries(properties).map(([fieldName, fieldSchema]: [string, any]) => {
                 const isRequired = required.includes(fieldName);
-                const value = object?.data[fieldName] ?? formData[fieldName];
+                let value = object?.data[fieldName] ?? formData[fieldName];
+
+                if(fieldSchema.type === 'array' && !value) {
+                    // allow to initialize empty array to display one first input
+                    value = [''];
+                }
 
                 return (
                     <div key={fieldName}>
@@ -110,17 +119,75 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
 
                         {/* Array */}
                         {fieldSchema.type === 'array' && (
-                            <textarea
-                                value={Array.isArray(value) ? value.join(', ') : ''}
-                                onChange={(e) => handleChange(
-                                    fieldName,
-                                    e.target.value.split(',').map(v => v.trim()).filter(v => v)
-                                )}
-                                placeholder="Enter items separated by commas"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                rows={2}
-                                required={isRequired}
-                            />
+                            <div>
+                                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-2">
+                                    { (Array.isArray(value) ? value : (value ? [value] : [])).map((item: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={item ?? ''}
+                                                ref={(el) => {
+                                                    if (!inputRefs.current[fieldName]) inputRefs.current[fieldName] = [];
+                                                    inputRefs.current[fieldName][idx] = el;
+                                                }}
+                                                onChange={(e) => {
+                                                    const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
+                                                    arr[idx] = e.target.value;
+                                                    handleChange(fieldName, arr);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
+                                                        arr.splice(idx + 1, 0, '');
+                                                        handleChange(fieldName, arr);
+                                                        // focus the newly created input on next tick
+                                                        setTimeout(() => {
+                                                            const ref = inputRefs.current[fieldName]?.[idx + 1];
+                                                            ref?.focus();
+                                                        }, 0);
+                                                    }
+                                                }}
+                                                className="flex-1 px-2 py-1 border border-gray-300 rounded-md text-sm"
+                                            />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
+                                                        arr.splice(idx, 1);
+                                                        handleChange(fieldName, arr);
+                                                        // shift focus to next item or previous one
+                                                        setTimeout(() => {
+                                                            const nextRef = inputRefs.current[fieldName]?.[idx] || inputRefs.current[fieldName]?.[idx - 1];
+                                                            nextRef?.focus();
+                                                        }, 0);
+                                                    }}
+                                                className="px-2 py-1 text-sm text-red-600 bg-red-50 rounded"
+                                                aria-label={`Remove item ${idx + 1}`}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
+                                            arr.push('');
+                                            handleChange(fieldName, arr);
+                                            setTimeout(() => {
+                                                const ref = inputRefs.current[fieldName]?.[arr.length - 1];
+                                                ref?.focus();
+                                            }, 0);
+                                        }}
+                                        className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                                    >
+                                        + Add
+                                    </button>
+                                </div>
+                            </div>
                         )}
 
                         {/* Regular String */}

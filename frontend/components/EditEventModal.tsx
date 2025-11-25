@@ -34,6 +34,7 @@ export default function EditEventModal({
     );
     const [allDay, setAllDay] = useState(true);
     const [eventData, setEventData] = useState<any>({});
+    const [objectDefinition, setObjectDefinition] = useState<ObjectDefinition | undefined>(undefined);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -46,12 +47,13 @@ export default function EditEventModal({
         setStartDate(selectedEvent.startDate ? new Date(selectedEvent.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
         setAllDay(selectedEvent.allDay);
         setEventData(selectedEvent.data);
+        setObjectDefinition(selectedEvent.objectDefinition);
+
     }, [selectedEvent]);
+
 
     // Avoid rendering until modal is open and we have an event
     if (!isOpen || !selectedEvent) return null;
-
-    const objectDefinition = selectedEvent.objectDefinition;
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -75,6 +77,7 @@ export default function EditEventModal({
             setDescription('');
             setEventData({});
             setAllDay(true);
+            setObjectDefinition(undefined);
 
             onClose();
         } catch (err: any) {
@@ -181,6 +184,19 @@ export default function EditEventModal({
                                     </label>
                                 </div>
                             </div>
+
+                            {selectedEvent && (
+                                <div className="border-t pt-4">
+                                    <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                                        {objectDefinition?.name} Details
+                                    </h3>
+                                    <DynamicForm
+                                        schema={objectDefinition?.schema}
+                                        initialData={eventData}
+                                        onDataChange={setEventData}
+                                    />
+                                </div>
+                            )}
 
 
 

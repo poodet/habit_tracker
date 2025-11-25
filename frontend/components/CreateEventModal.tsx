@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ObjectDefinition } from '@/types';
 import { calendarEventsApi } from '@/lib/api';
 import DynamicForm from './DynamicForm';
@@ -18,6 +18,7 @@ interface CreateEventModalProps {
         objectDefinitionId: string;
     }) => Promise<void>;
     objects: ObjectDefinition[];
+    selectedHabitId?: string;
     selectedDate?: Date;
 }
 
@@ -27,8 +28,9 @@ export default function CreateEventModal({
     onSubmit,
     objects,
     selectedDate,
+    selectedHabitId,
 }: CreateEventModalProps) {
-    const [selectedObjectId, setSelectedObjectId] = useState('');
+    const [objectDefinition, setObjectDefinition] = useState<ObjectDefinition | undefined>(undefined);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState(
@@ -39,14 +41,31 @@ export default function CreateEventModal({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+
+    useEffect(() => {
+        if (isOpen && selectedHabitId) {
+            const selectedObjectDefinition = objects.find(obj => obj.id === selectedHabitId);
+            setObjectDefinition(selectedObjectDefinition);
+
+        }
+        if (!isOpen) {
+            // clear local state when modal closed so reopen starts fresh
+            setTitle('');
+            setDescription('');
+            setEventData({});
+            setAllDay(true);
+            // don't clear selectedObjectDefinition here to preserve selection when reopening with same habit; handled above
+        }
+    }, [isOpen, selectedHabitId]);
+
     if (!isOpen) return null;
 
-    const selectedObject = objects.find(obj => obj.id === selectedObjectId);
+    console.log("objectDefinition: ",  objectDefinition, selectedHabitId);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!selectedObjectId) {
+        if (!objectDefinition) {
             setError('Please select an object type');
             return;
         }
@@ -61,15 +80,15 @@ export default function CreateEventModal({
                 startDate: new Date(startDate),
                 allDay,
                 data: eventData,
-                objectDefinitionId: selectedObjectId,
+                objectDefinitionId: objectDefinition?.id || '',
             });
 
             // Reset form
             setTitle('');
             setDescription('');
-            setSelectedObjectId('');
             setEventData({});
             setAllDay(true);
+            setObjectDefinition(undefined);
 
             onClose();
         } catch (err: any) {
@@ -92,7 +111,7 @@ export default function CreateEventModal({
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Create New Event</h2>
+                        <h2 className="text-2xl font-bold text-gray-800">Create New { selectedHabitId ? objectDefinition?.name + " Event" : "Event"}</h2>
                         <button
                             onClick={handleClose}
                             disabled={loading}
@@ -122,14 +141,16 @@ export default function CreateEventModal({
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
+
+                            { !selectedHabitId && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Object Type <span className="text-red-500">*</span>
                                 </label>
                                 <select
-                                    value={selectedObjectId}
+                                    value={objectDefinition?.id || ''}
                                     onChange={(e) => {
-                                        setSelectedObjectId(e.target.value);
+                                        setObjectDefinition(objects.find(obj => obj.id === e.target.value));
                                         setEventData({});
                                     }}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
@@ -143,6 +164,7 @@ export default function CreateEventModal({
                                     ))}
                                 </select>
                             </div>
+                            )}
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -198,13 +220,13 @@ export default function CreateEventModal({
                                 </div>
                             </div>
 
-                            {selectedObject && (
+                            {objectDefinition && (
                                 <div className="border-t pt-4">
                                     <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                                        {selectedObject.name} Details
+                                        {objectDefinition.name} Details
                                     </h3>
                                     <DynamicForm
-                                        schema={selectedObject.schema}
+                                        schema={objectDefinition.schema}
                                         initialData={eventData}
                                         onDataChange={setEventData}
                                     />
