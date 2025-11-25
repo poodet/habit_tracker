@@ -68,13 +68,11 @@ export default function CreateEventModal({
                     initialObject={preselectedObject}
                     initialStartDate={selectedDate ? selectedDate.toISOString().split('T')[0] : undefined}
                     initialAllDay={true}
-                    initialData={{}}
+                    initialData={undefined}
                     showObjectSelector={!selectedHabitId}
                     onCancel={handleClose}
                     onSubmit={async (payload) => {
-                        // delegate to parent submit handler
                         await onSubmit(payload);
-                        // close modal after successful submit
                         onClose();
                     }}
                 />

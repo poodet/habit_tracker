@@ -28,21 +28,21 @@ interface EventFormProps {
 export default function EventForm({
     objects,
     initialObject,
-    initialTitle = '',
-    initialDescription = '',
-    initialStartDate = new Date().toISOString(),
-    initialAllDay = true,
-    initialData = {},
+    initialTitle,
+    initialDescription,
+    initialStartDate,
+    initialAllDay,
+    initialData,
     showObjectSelector = true,
     onCancel,
     onSubmit,
 }: EventFormProps) {
     const [objectDefinition, setObjectDefinition] = useState<ObjectDefinition | undefined>(initialObject);
-    const [title, setTitle] = useState(initialTitle);
-    const [description, setDescription] = useState(initialDescription);
-    const [startDate, setStartDate] = useState(initialStartDate);
+    const [title, setTitle] = useState(initialTitle ?? '');
+    const [description, setDescription] = useState(initialDescription ?? '');
+    const [startDate, setStartDate] = useState(initialStartDate ?? new Date().toISOString());
     const [tempStartTime, setTempStartTime] = useState('12:00');
-    const [allDay, setAllDay] = useState(initialAllDay);
+    const [allDay, setAllDay] = useState(initialAllDay ?? true);
     const [eventData, setEventData] = useState<any>(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,8 +80,8 @@ export default function EventForm({
         setLoading(true);
         setError(null);
 
-    // build a Date from local date/time inputs
-    const dateComplete = buildLocalDate(startDate, tempStartTime, allDay);
+        // build a Date from local date/time inputs
+        const dateComplete = buildLocalDate(startDate, tempStartTime, allDay);
 
         try {
             await onSubmit({

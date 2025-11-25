@@ -138,12 +138,22 @@ export default function CalendarPage() {
 
     const handleHabitSetting = (habitId: string) => {
         // For simplicity, just alerting; replace with actual settings logic
-    const habitToEdit = objects.find(o => o.id === habitId);
-    if (!habitToEdit) return;
+        const habitToEdit = objects.find(o => o.id === habitId);
+        if (!habitToEdit) return;
 
-    setSelectedHabit(habitToEdit);
-    setShowHabitSettingModal(true);
+        setSelectedHabit(habitToEdit);
+        setShowHabitSettingModal(true);
     }
+
+    const handleConfirmDeleteObject = useCallback(async (id: string) => {
+        await objectDefinitionsApi.delete(id);
+        await fetchData();
+        setShowHabitSettingModal(false);
+        // If the deleted habit was selected, clear selection
+        if (selectedHabit?.id === id) {
+            setSelectedHabit(undefined);
+        }
+    }, [fetchData, selectedHabit]);
 
 
     // derive useful values
@@ -252,6 +262,7 @@ export default function CalendarPage() {
                 onClose={() => setShowHabitSettingModal(false)}
                 object={selectedHabit}
                 onSubmit={handleConfirmUpdateObject}
+                onDelete={handleConfirmDeleteObject}
             />
 
 
