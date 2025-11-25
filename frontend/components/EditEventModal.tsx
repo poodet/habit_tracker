@@ -72,7 +72,7 @@ export default function EditEventModal({
                                 initialObject={objectDefinition}
                                 initialTitle={selectedEvent.title}
                                 initialDescription={selectedEvent.description || ''}
-                                initialStartDate={selectedEvent.startDate ? new Date(selectedEvent.startDate).toISOString().split('T')[0] : undefined}
+                                initialStartDate={selectedEvent.startDate ? new Date(selectedEvent.startDate).toISOString() : undefined}
                                 initialAllDay={selectedEvent.allDay}
                                 initialData={selectedEvent.data}
                                 showObjectSelector={false}

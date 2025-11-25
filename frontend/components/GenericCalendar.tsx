@@ -15,6 +15,7 @@ interface GenericCalendarProps {
     initialView?: string;
     headerToolbar?: any;
     className?: string;
+    onEventChange?(changeInfo: any): void;
 }
 
 export interface CalendarHandle {
@@ -27,17 +28,17 @@ const GenericCalendar = forwardRef(function GenericCalendar(
     {
         events,
         onCreateEvent,
-
-        initialView = 'listWeek',
+        initialView = 'timeGridDay',
         headerToolbar,
         className,
+        onEventChange,
     }: GenericCalendarProps,
     ref: any
 ) {
     const calendarRef = useRef<any>(null);
 
     const fcEvents = useMemo(() => (
-        events.map(e => ({ id: e.id, title: e.title, start: e.startDate }))
+        events.map(e => ({ id: e.id, title: e.title, start: e.startDate, allDay: e.allDay }))
     ), [events]);
 
     useImperativeHandle(ref, () => ({
@@ -49,7 +50,7 @@ const GenericCalendar = forwardRef(function GenericCalendar(
     const defaultToolbar = headerToolbar ?? {
         left: 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
     };
 
     return (
@@ -71,6 +72,7 @@ const GenericCalendar = forwardRef(function GenericCalendar(
                         dateClick={(arg: any) => onCreateEvent?.(new Date(arg.date))}
                         height="100%"
                         expandRows={true}
+                        eventChange={onEventChange}
                     />
                 </div>
             </div>

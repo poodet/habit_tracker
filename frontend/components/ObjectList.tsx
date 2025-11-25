@@ -1,7 +1,6 @@
 'use client';
 
 import { ObjectDefinition } from '@/types';
-import CalendarHabit from './CalendarHabit';
 
 interface ObjectListProps {
     objects: ObjectDefinition[];

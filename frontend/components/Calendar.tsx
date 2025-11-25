@@ -8,14 +8,26 @@ interface CalendarProps {
     events: CalendarEvent[];
     selectedObjectId?: string;
     onCreateEvent: (date?: Date) => void;
+    onEditEventDateTime: (id:string, data: any) => void;
 }
 
 export type CalendarHandle = GenericCalendarHandle;
 
 const Calendar = React.forwardRef(function Calendar(
-    { events, selectedObjectId, onCreateEvent }: CalendarProps,
+    { events, selectedObjectId, onCreateEvent, onEditEventDateTime }: CalendarProps,
     ref: any
 ) {
+
+    const handleEventChange = (changeInfo: any) => {
+        const id = changeInfo.event.id;
+        const data = {
+            startDate: new Date(changeInfo.event.start),
+            endDate: new Date(changeInfo.event.end),
+            allDay: changeInfo.event.allDay,
+        };
+        onEditEventDateTime(id, data)
+    };
+
     return (
         <div className="w-full h-full flex flex-col bg-white">
             <div className="flex gap-2 ml-4">
@@ -30,7 +42,8 @@ const Calendar = React.forwardRef(function Calendar(
                 ref={ref}
                 events={events}
                 onCreateEvent={onCreateEvent}
-                initialView="listWeek"
+                onEventChange={handleEventChange}
+
             />
         </div>
     );

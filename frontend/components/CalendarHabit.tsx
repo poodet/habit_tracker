@@ -13,9 +13,10 @@ interface CalendarHabitProps {
     onDeleteEvent: (id: string, title?: string) => void;
     onEditEvent: (id: string) => void;
     onHabitSetting: (habitId: string) => void;
+    onEditEventDateTime: (id:string, data: any) => void;
 }
 
-export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEvent, onEditEvent, onHabitSetting }: CalendarHabitProps) {
+export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEvent, onEditEvent, onHabitSetting, onEditEventDateTime }: CalendarHabitProps) {
     const calendarRef = useRef<CalendarHandle | null>(null);
 
     // Helper: compute grouped events by local date string
@@ -32,6 +33,17 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
 
     // Memoized grouped data to avoid recomputing on every render
     const grouped = useMemo(() => getGroupedEvents(events), [events, getGroupedEvents]);
+
+    // Event change handler
+    const handleEventChange = (changeInfo: any) => {
+        const id = changeInfo.event.id;
+        const data = {
+            startDate: new Date(changeInfo.event.start),
+            endDate: new Date(changeInfo.event.end),
+            allDay: changeInfo.event.allDay,
+        };
+        onEditEventDateTime(id, data)
+    };
 
     // Helper: render grouped events list (keeps return JSX concise)
     const renderGroupedList = (groups: Record<string, CalendarEvent[]>) => {
@@ -80,7 +92,7 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
         calendarRef.current?.setOption?.('headerToolbar', {
             left: 'prev,next',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,listWeek'
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
         });
     }, []);
 
@@ -99,7 +111,7 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
                     </button>
                 </div>
 
-                <div className="flex">
+                <div className="flex h-full mb-4">
                     <div className="w-1/2 flex-1 p-6 min-h-0">
                         <div className="mb-4 flex ">
                             <div className='flex-1'>
@@ -124,7 +136,8 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
                                 ref={calendarRef}
                                 events={events}
                                 onCreateEvent={onCreateEvent}
-                                headerToolbar={{ left: 'prev,next', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' }}
+                                headerToolbar={{ left: 'prev,next', center: 'title', right: 'dayGridMonth,timeGridWeek, timeGridDay' }}
+                                onEventChange={handleEventChange}
                             />
                         </div>
                     </div>

@@ -102,14 +102,18 @@ export default function CalendarPage() {
     }, [refreshEvents]);
 
     const handleEditEvent = (id: string) => {
-    const eventToEdit = events.find(e => e.id === id);
-    setSelectedEvent(eventToEdit);
+        const eventToEdit = events.find(e => e.id === id);
+        setSelectedEvent(eventToEdit);
         if (!eventToEdit) return;
 
         setSelectedDate(new Date(eventToEdit.startDate));
         setShowEditEventModal(true);
-        console.log("Editing event:", eventToEdit);
-        
+    }
+
+    const handleEditEventDateTime = async (id: string, data: any) => {
+        // Triggered when an event's date/time is changed via drag/drop or resize in calendar
+        await calendarEventsApi.update(id, data);
+        await refreshEvents();
     }
 
     const handleConfirmUpdateEvent = useCallback(async (data: any) => {
@@ -192,12 +196,14 @@ export default function CalendarPage() {
                     onDeleteEvent={handleDeleteEvent}
                     onEditEvent={handleEditEvent}
                     onHabitSetting={handleHabitSetting}
+                    onEditEventDateTime={handleEditEventDateTime}
                 />
             ) : (
                 <Calendar
                     events={events}
                     selectedObjectId={selectedHabitId}
                     onCreateEvent={handleCreateEvent}
+                    onEditEventDateTime={handleEditEventDateTime}
                 />
             )}
 

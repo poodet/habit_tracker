@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { ObjectDefinition } from '@/types';
 import DynamicForm from './DynamicForm';
+import { isoToLocalDateAndTime, buildLocalDate } from '@/lib/datetime';
 
 interface EventFormProps {
     objects: ObjectDefinition[];
     initialObject?: ObjectDefinition | undefined;
     initialTitle?: string;
     initialDescription?: string;
-    initialStartDate?: string; // YYYY-MM-DD
+    initialStartDate?: string; 
     initialAllDay?: boolean;
     initialData?: any;
     showObjectSelector?: boolean; // when false, object is fixed (e.g. edit or preselected habit)
@@ -29,7 +30,7 @@ export default function EventForm({
     initialObject,
     initialTitle = '',
     initialDescription = '',
-    initialStartDate = new Date().toISOString().split('T')[0],
+    initialStartDate = new Date().toISOString(),
     initialAllDay = true,
     initialData = {},
     showObjectSelector = true,
@@ -40,6 +41,7 @@ export default function EventForm({
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
     const [startDate, setStartDate] = useState(initialStartDate);
+    const [tempStartTime, setTempStartTime] = useState('12:00');
     const [allDay, setAllDay] = useState(initialAllDay);
     const [eventData, setEventData] = useState<any>(initialData);
     const [loading, setLoading] = useState(false);
@@ -54,9 +56,17 @@ export default function EventForm({
     useEffect(() => {
         setTitle(initialTitle ?? '');
         setDescription(initialDescription ?? '');
-        setStartDate(initialStartDate ?? new Date().toISOString().split('T')[0]);
         setAllDay(initialAllDay ?? true);
         setEventData(initialData ?? {});
+
+        const { date, time } = isoToLocalDateAndTime(initialStartDate);
+        const today = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const fallbackDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+        setStartDate(date ?? fallbackDate);
+        if (!initialAllDay) setTempStartTime(time ?? '12:00');
+
     }, [initialTitle, initialDescription, initialStartDate, initialAllDay, initialData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -70,11 +80,14 @@ export default function EventForm({
         setLoading(true);
         setError(null);
 
+    // build a Date from local date/time inputs
+    const dateComplete = buildLocalDate(startDate, tempStartTime, allDay);
+
         try {
             await onSubmit({
                 title,
                 description: description || undefined,
-                startDate: new Date(startDate),
+                startDate: dateComplete,
                 allDay,
                 data: eventData,
                 objectDefinitionId: objectDefinition.id,
@@ -140,20 +153,10 @@ export default function EventForm({
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date <span className="text-red-500">*</span></label>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        required
-                    />
-                </div>
-
-                <div className="flex items-end">
-                    <label className="flex items-center gap-2">
+            <div className="gap-4">
+                <div className="space-x-4">
+                    <label className="text-sm font-medium text-gray-700 mb-1">Date <span className="text-red-500">*</span></label>
+                    <label className=" gap-2 space-x-1">
                         <input
                             type="checkbox"
                             checked={allDay}
@@ -163,6 +166,31 @@ export default function EventForm({
                         <span className="text-sm text-gray-700">All day event</span>
                     </label>
                 </div>
+                <div className=" grid grid-cols-2 gap-4">
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg "
+                        required
+                    />
+                    {!allDay && (
+                        <label className="flex items-center gap-2">
+                            <input
+                                className="px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder="Basic time picker"
+                                type="time"
+                                value={tempStartTime}
+                                onChange={(e) =>
+                                    setTempStartTime(`${e.target.value}`)
+                                }
+           
+                            />
+                        </label>
+                    )}
+                </div>
+
+
             </div>
 
             {objectDefinition && (
