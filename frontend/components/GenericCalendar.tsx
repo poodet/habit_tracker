@@ -16,6 +16,7 @@ interface GenericCalendarProps {
     headerToolbar?: any;
     className?: string;
     onEventChange?(changeInfo: any): void;
+    onEventClick?(clickInfo: any): void;
 }
 
 export interface CalendarHandle {
@@ -32,6 +33,7 @@ const GenericCalendar = forwardRef(function GenericCalendar(
         headerToolbar,
         className,
         onEventChange,
+        onEventClick,
     }: GenericCalendarProps,
     ref: any
 ) {
@@ -73,6 +75,7 @@ const GenericCalendar = forwardRef(function GenericCalendar(
                         height="100%"
                         expandRows={true}
                         eventChange={onEventChange}
+                        eventClick={onEventClick}
                     />
                 </div>
             </div>

@@ -214,6 +214,7 @@ export default function CalendarPage() {
                     selectedObjectId={selectedHabitId}
                     onCreateEvent={handleCreateEvent}
                     onEditEventDateTime={handleEditEventDateTime}
+                    onEditEvent={handleEditEvent}
                 />
             )}
 

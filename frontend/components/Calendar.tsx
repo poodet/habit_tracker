@@ -9,12 +9,13 @@ interface CalendarProps {
     selectedObjectId?: string;
     onCreateEvent: (date?: Date) => void;
     onEditEventDateTime: (id:string, data: any) => void;
+    onEditEvent: (id: string) => void;
 }
 
 export type CalendarHandle = GenericCalendarHandle;
 
 const Calendar = React.forwardRef(function Calendar(
-    { events, selectedObjectId, onCreateEvent, onEditEventDateTime }: CalendarProps,
+    { events, selectedObjectId, onCreateEvent, onEditEventDateTime, onEditEvent }: CalendarProps,
     ref: any
 ) {
 
@@ -27,6 +28,12 @@ const Calendar = React.forwardRef(function Calendar(
         };
         onEditEventDateTime(id, data)
     };
+
+
+    const handleEventClick = (clickInfo: any) => {
+        const id = clickInfo.event.id;
+        onEditEvent(id);
+    }
 
     return (
         <div className="w-full h-full flex flex-col bg-white">
@@ -43,6 +50,7 @@ const Calendar = React.forwardRef(function Calendar(
                 events={events}
                 onCreateEvent={onCreateEvent}
                 onEventChange={handleEventChange}
+                onEventClick={handleEventClick}
 
             />
         </div>

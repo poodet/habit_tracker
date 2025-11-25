@@ -45,6 +45,11 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
         onEditEventDateTime(id, data)
     };
 
+    const handleEventClick = (clickInfo: any) => {
+        const id = clickInfo.event.id;
+        onEditEvent(id);
+    }
+
     // Helper: render grouped events list (keeps return JSX concise)
     const renderGroupedList = (groups: Record<string, CalendarEvent[]>) => {
         return (
@@ -138,6 +143,7 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
                                 onCreateEvent={onCreateEvent}
                                 headerToolbar={{ left: 'prev,next', center: 'title', right: 'dayGridMonth,timeGridWeek, timeGridDay' }}
                                 onEventChange={handleEventChange}
+                                onEventClick={handleEventClick}
                             />
                         </div>
                     </div>
