@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface SchemaField {
+    key: string;
     name: string;
     type: 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array';
     required: boolean;
@@ -20,9 +21,12 @@ interface SchemaBuilderProps {
 
 export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderProps) {
     const [fields, setFields] = useState<SchemaField[]>([]);
-
+    // avoid noisy logging on every render
+    
     const addField = () => {
+        const fieldLength = fields.length;
         const newField: SchemaField = {
+            key: `field_${fieldLength}`,
             name: '',
             type: 'string',
             required: false,
@@ -49,11 +53,12 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
         const props = object.schema.properties || {};
         const requiredArr: string[] = object.schema.required || [];
 
-        const parsed: SchemaField[] = Object.entries(props).map(([name, schema]: [string, any]) => {
+        const parsed: SchemaField[] = Object.entries(props).map(([key, schema]: [string, any]) => {
             const field: SchemaField = {
-                name,
+                key,
+                name: schema.propName,
                 type: 'string',
-                required: requiredArr.includes(name),
+                required: requiredArr.includes(key),
             };
 
             if (schema.type === 'number') {
@@ -69,7 +74,7 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
             } else if (Array.isArray(schema.enum)) {
                 field.type = 'enum';
                 field.enumValues = schema.enum;
-                field.enumRaw = schema.enum.join(', ');
+                field.enumRaw = Array.isArray(schema.enum) ? schema.enum.join(', ') : undefined;
             }
 
             if (schema.description) field.description = schema.description;
@@ -77,6 +82,7 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
         });
 
         // Keep parent in sync with the original schema (optional)
+        setFields(parsed);
         onSchemaChange(object.schema);
     }, [object]);
 
@@ -85,7 +91,7 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
         const required: string[] = [];
 
         currentFields.forEach(field => {
-            if (!field.name) return;
+            if (!field.key) return;
 
             let fieldSchema: any = {};
 
@@ -123,11 +129,13 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
                     if (field.description) fieldSchema.description = field.description;
                     break;
             }
+            
+            fieldSchema.propName = field.name || field.key; 
 
-            properties[field.name] = fieldSchema;
+            properties[field.key] = fieldSchema;
 
             if (field.required) {
-                required.push(field.name);
+                required.push(field.key);
             }
         });
 

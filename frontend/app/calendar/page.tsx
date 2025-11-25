@@ -41,7 +41,7 @@ export default function CalendarPage() {
                 calendarEventsApi.getAll(),
             ]);
 
-            setObjects(objectsResponse.data);
+            setObjects(objectsResponse.data.sort((a: ObjectDefinition, b: ObjectDefinition) => a.createdAt.localeCompare(b.createdAt)));
             setEvents(eventsResponse.data);
             setError(null);
         } catch (err: any) {

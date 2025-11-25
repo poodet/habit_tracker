@@ -70,11 +70,27 @@ export default function CalendarHabit({ events, habit, onCreateEvent, onDeleteEv
                                     onClick={() => onEditEvent(ev.id)}
                                 >
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-800">{ev.title}</div>
-                                        <div className="text-sm text-gray-500">{new Date(ev.startDate).toLocaleTimeString()}</div>
+                                        <div className="flex items-center  gap-4">
+                                            <div className="font-medium text-gray-800">{ev.title}</div>
+                                            { !ev.allDay && (
+                                                <div className="text-sm text-gray-500">{new Date(ev.startDate).toLocaleTimeString()}</div>
+                                            )}
+                                        </div>
+                                        { ev.data && Object.keys(ev.data).length > 0 && (
+                                            <div className="mt-1 text-sm text-gray-600 flex">
+                                                {Object.entries(ev.data).map(([key, value]) => (
+                                                    <div key={key} className='flex-none mr-1'>
+                                                        <span className="font-semibold">{ev.objectDefinition?.schema.properties[key]?.propName}:</span> {String(value)} 
+                                                        {key !== Object.keys(ev.data!).slice(-1)[0] ? ' |' : ''}
+                                                        
+
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <button
-                                        className="px-4 flex-none bg-red-500 text-white hover:bg-red-600 rounded-full text-sm"
+                                        className="w-8 h-8 flex items-center self-center justify-center flex-none bg-red-500 text-white hover:bg-red-600 rounded-full text-sm"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onDeleteEvent(ev.id, ev.title);

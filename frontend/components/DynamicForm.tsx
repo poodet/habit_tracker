@@ -16,11 +16,11 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
         setFormData(initialData);
     }, [initialData]);
 
-    // Refs to manage focus for dynamic array inputs: map fieldName -> array of refs
+    // Refs to manage focus for dynamic array inputs: map fieldKey -> array of refs
     const inputRefs = useRef<Record<string, Array<HTMLInputElement | null>>>({});
 
-    const handleChange = (fieldName: string, value: any) => {
-        const newData = { ...formData, [fieldName]: value };
+    const handleChange = (fieldKey: string, value: any) => {
+        const newData = { ...formData, [fieldKey]: value };
         setFormData(newData);
         onDataChange(newData);
     };
@@ -39,9 +39,9 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
 
     return (
         <div className="space-y-4">
-            {Object.entries(properties).map(([fieldName, fieldSchema]: [string, any]) => {
-                const isRequired = required.includes(fieldName);
-                let value = object?.data[fieldName] ?? formData[fieldName];
+            {Object.entries(properties).map(([fieldKey, fieldSchema]: [string, any]) => {
+                const isRequired = required.includes(fieldKey);
+                let value = object?.data[fieldKey] ?? formData[fieldKey];
 
                 if(fieldSchema.type === 'array' && !value) {
                     // allow to initialize empty array to display one first input
@@ -49,9 +49,9 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                 }
 
                 return (
-                    <div key={fieldName}>
+                    <div key={fieldKey}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {fieldName}
+                            {fieldSchema.propName}
                             {isRequired && <span className="text-red-500 ml-1">*</span>}
                             {fieldSchema.description && (
                                 <span className="text-xs text-gray-500 ml-2">
@@ -64,7 +64,7 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                         {fieldSchema.enum && (
                             <select
                                 value={value || ''}
-                                onChange={(e) => handleChange(fieldName, e.target.value)}
+                                onChange={(e) => handleChange(fieldKey, e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required={isRequired}
                             >
@@ -83,7 +83,7 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                                 type="number"
                                 value={value ?? ''}
                                 onChange={(e) => handleChange(
-                                    fieldName,
+                                    fieldKey,
                                     e.target.value ? Number(e.target.value) : undefined
                                 )}
                                 min={fieldSchema.minimum}
@@ -99,7 +99,7 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                                 <input
                                     type="checkbox"
                                     checked={value || false}
-                                    onChange={(e) => handleChange(fieldName, e.target.checked)}
+                                    onChange={(e) => handleChange(fieldKey, e.target.checked)}
                                     className="rounded"
                                 />
                                 <span className="text-sm text-gray-600">Yes</span>
@@ -111,7 +111,7 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                             <input
                                 type="date"
                                 value={value || ''}
-                                onChange={(e) => handleChange(fieldName, e.target.value)}
+                                onChange={(e) => handleChange(fieldKey, e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required={isRequired}
                             />
@@ -127,23 +127,23 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                                                 type="text"
                                                 value={item ?? ''}
                                                 ref={(el) => {
-                                                    if (!inputRefs.current[fieldName]) inputRefs.current[fieldName] = [];
-                                                    inputRefs.current[fieldName][idx] = el;
+                                                    if (!inputRefs.current[fieldKey]) inputRefs.current[fieldKey] = [];
+                                                    inputRefs.current[fieldKey][idx] = el;
                                                 }}
                                                 onChange={(e) => {
                                                     const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
                                                     arr[idx] = e.target.value;
-                                                    handleChange(fieldName, arr);
+                                                    handleChange(fieldKey, arr);
                                                 }}
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
                                                         e.preventDefault();
                                                         const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
                                                         arr.splice(idx + 1, 0, '');
-                                                        handleChange(fieldName, arr);
+                                                        handleChange(fieldKey, arr);
                                                         // focus the newly created input on next tick
                                                         setTimeout(() => {
-                                                            const ref = inputRefs.current[fieldName]?.[idx + 1];
+                                                            const ref = inputRefs.current[fieldKey]?.[idx + 1];
                                                             ref?.focus();
                                                         }, 0);
                                                     }
@@ -155,10 +155,10 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                                                     onClick={() => {
                                                         const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
                                                         arr.splice(idx, 1);
-                                                        handleChange(fieldName, arr);
+                                                        handleChange(fieldKey, arr);
                                                         // shift focus to next item or previous one
                                                         setTimeout(() => {
-                                                            const nextRef = inputRefs.current[fieldName]?.[idx] || inputRefs.current[fieldName]?.[idx - 1];
+                                                            const nextRef = inputRefs.current[fieldKey]?.[idx] || inputRefs.current[fieldKey]?.[idx - 1];
                                                             nextRef?.focus();
                                                         }, 0);
                                                     }}
@@ -176,9 +176,9 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                                         onClick={() => {
                                             const arr = Array.isArray(value) ? [...value] : (value ? [value] : []);
                                             arr.push('');
-                                            handleChange(fieldName, arr);
+                                            handleChange(fieldKey, arr);
                                             setTimeout(() => {
-                                                const ref = inputRefs.current[fieldName]?.[arr.length - 1];
+                                                const ref = inputRefs.current[fieldKey]?.[arr.length - 1];
                                                 ref?.focus();
                                             }, 0);
                                         }}
@@ -195,7 +195,7 @@ export default function DynamicForm({ schema, initialData = {}, onDataChange, ob
                             <input
                                 type="text"
                                 value={value || ''}
-                                onChange={(e) => handleChange(fieldName, e.target.value)}
+                                onChange={(e) => handleChange(fieldKey, e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required={isRequired}
                             />

@@ -40,7 +40,15 @@ const GenericCalendar = forwardRef(function GenericCalendar(
     const calendarRef = useRef<any>(null);
 
     const fcEvents = useMemo(() => (
-        events.map(e => ({ id: e.id, title: e.title, start: e.startDate, allDay: e.allDay }))
+        events.map(e => ({ 
+            id: e.id, 
+            title: e.title, 
+            start: e.startDate, 
+            allDay: e.allDay,
+            color: e.objectDefinition?.color || '#3B82F6',
+            //if color is light, use black text, else white
+            textColor: e.objectDefinition?.color ? (parseInt(e.objectDefinition.color.replace('#', ''), 16) > 0xAAAAAA ? 'black' : 'white') : 'white',
+         }))
     ), [events]);
 
     useImperativeHandle(ref, () => ({
