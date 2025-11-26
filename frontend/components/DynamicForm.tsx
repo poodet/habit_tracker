@@ -12,10 +12,6 @@ interface DynamicFormProps {
 export default function DynamicForm({ schema, initialData = {}, onDataChange, object }: DynamicFormProps) {
     const [formData, setFormData] = useState<any>(initialData);
 
-    useEffect(() => {
-        setFormData(initialData);
-    }, [initialData]);
-
     // Refs to manage focus for dynamic array inputs: map fieldKey -> array of refs
     const inputRefs = useRef<Record<string, Array<HTMLInputElement | null>>>({});
 

@@ -153,6 +153,7 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-800">Define Fields</h3>
                 <button
+                    data-testid="add-field-button"
                     type="button"
                     onClick={addField}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
@@ -168,13 +169,14 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
             )}
 
             {fields.map((field, index) => (
-                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <div key={index} data-testid="schema-field" className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="grid grid-cols-2 gap-3 mb-3">
                         <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
                                 Field Name
                             </label>
                             <input
+                                data-testid="field-name-input"
                                 type="text"
                                 value={field.name}
                                 onChange={(e) => updateField(index, { name: e.target.value })}
@@ -291,6 +293,7 @@ export default function SchemaBuilder({ onSchemaChange, object }: SchemaBuilderP
                     </div>
                 </div>
             ))}
+            
         </div>
     );
 }

@@ -44,6 +44,6 @@ Be concise. This project is a two-service web app: a Next.js frontend in `/front
 
 - Goal of the project
   - A habit tracking app where users define custom habit types (object definitions) with dynamic schemas, and log events against those habits on a calendar interface.
-  - Learn web technologies (especially React and Node.js related) and best practices in a full-stack TypeScript environment. Create a clean, scalable codebase with good separation of concerns.
+  - Learn web technologies (especially React and Node.js related) and best practices in a full-stack TypeScript environment. Create a clean, scalable codebase with good separation of concerns. Be particularly attentive to anti-patterns, performance, and security best practices.
 
 If anything above is unclear or you want more detail (CI steps, specific entity-to-UI mappings, or example `.env`), tell me which area to expand. Iterate with small, focused updates.

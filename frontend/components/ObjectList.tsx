@@ -13,14 +13,14 @@ export default function ObjectList({ objects, selectedObjectId, onSelectObject, 
     return (
         <div className="flex flex-col w-full max-w-sm bg-gray-50 border-r border-gray-200 p-4 h-full">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">My Habits</h2>
-            <div className="overflow-y-auto min-h-0">
+            <div data-testid="object-list" className="overflow-y-auto min-h-0">
                 {objects.length === 0 ? (
                     <div className="text-sm text-gray-500 text-center py-8">
                         <p>No habits yet.</p>
                         <p className="mt-2">Create your first habit to get started!</p>
                     </div>
                 ) : (
-                    <div className="grid grid-flow-rows grid-cols-2 gap-4">
+                    <div  className="grid grid-flow-rows grid-cols-2 gap-4">
                         {objects.map((object) => (
                             <button
                                 key={object.id}

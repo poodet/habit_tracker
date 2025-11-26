@@ -1,0 +1,1 @@
+docker compose exec -T frontend npm test
