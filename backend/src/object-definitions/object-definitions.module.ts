@@ -6,9 +6,9 @@ import { ObjectDefinition } from './entities/object-definition.entity';
 import { SchemaValidationService } from '../common/schema-validation.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([ObjectDefinition])],
-    controllers: [ObjectDefinitionsController],
-    providers: [ObjectDefinitionsService, SchemaValidationService],
-    exports: [ObjectDefinitionsService],
+  imports: [TypeOrmModule.forFeature([ObjectDefinition])],
+  controllers: [ObjectDefinitionsController],
+  providers: [ObjectDefinitionsService, SchemaValidationService],
+  exports: [ObjectDefinitionsService],
 })
-export class ObjectDefinitionsModule { }
+export class ObjectDefinitionsModule {}

@@ -7,8 +7,8 @@ import { ObjectDefinitionsModule } from '../object-definitions/object-definition
 import { SchemaValidationService } from '../common/schema-validation.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CalendarEvent]), ObjectDefinitionsModule],
-    controllers: [CalendarEventsController],
-    providers: [CalendarEventsService, SchemaValidationService],
+  imports: [TypeOrmModule.forFeature([CalendarEvent]), ObjectDefinitionsModule],
+  controllers: [CalendarEventsController],
+  providers: [CalendarEventsService, SchemaValidationService],
 })
-export class CalendarEventsModule { }
+export class CalendarEventsModule {}
