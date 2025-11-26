@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { ObjectDefinition } from '@/types';
 import EventForm from './EventForm';
+import Modal from './Modal';
 
 interface CreateEventModalProps {
     isOpen: boolean;
@@ -28,40 +30,45 @@ export default function CreateEventModal({
     selectedDate,
     selectedHabitId,
 }: CreateEventModalProps) {
+    const [loading, setLoading] = useState(false);
     const preselectedObject = selectedHabitId ? objects.find(obj => obj.id === selectedHabitId) : undefined;
 
-    if (!isOpen) return null;
-
-    const handleClose = () => onClose();
+    const handleSubmit = async (payload: {
+        title: string;
+        description?: string;
+        startDate: Date;
+        allDay: boolean;
+        data: any;
+        objectDefinitionId: string;
+    }) => {
+        setLoading(true);
+        try {
+            await onSubmit(payload);
+            onClose();
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Create New {selectedHabitId ? preselectedObject?.name + " Event" : "Event"}</h2>
-                        <button
-                            onClick={handleClose}
-                            className="text-gray-400 hover:text-gray-600"
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-                    {/* EventForm handles its own errors */}
-
-                    {objects.length === 0 ? (
-                        <div className="text-center py-8">
-                            <p className="text-gray-600 mb-4">
-                                You need to create an object type first before creating events.
-                            </p>
-                            <button
-                                onClick={handleClose}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                            >
-                                Close
-                            </button>
-                        </div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={`Create New ${selectedHabitId ? preselectedObject?.name + ' Event' : 'Event'}`}
+            className="max-w-2xl"
+        >
+            {objects.length === 0 ? (
+                <div className="text-center py-8">
+                    <p className="text-gray-600 mb-4">
+                        You need to create an object type first before creating events.
+                    </p>
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                        Close
+                    </button>
+                </div>
             ) : (
                 <EventForm
                     objects={objects}
@@ -70,15 +77,10 @@ export default function CreateEventModal({
                     initialAllDay={true}
                     initialData={undefined}
                     showObjectSelector={!selectedHabitId}
-                    onCancel={handleClose}
-                    onSubmit={async (payload) => {
-                        await onSubmit(payload);
-                        onClose();
-                    }}
+                    onCancel={onClose}
+                    onSubmit={handleSubmit}
                 />
-                    )}
-                </div>
-            </div>
-        </div>
+            )}
+        </Modal>
     );
 }

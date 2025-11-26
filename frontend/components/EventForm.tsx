@@ -23,6 +23,12 @@ interface EventFormProps {
         data: any;
         objectDefinitionId: string;
     }) => Promise<void>;
+    /** Optional: parent can handle rendering action buttons */
+    renderActions?: (params: {
+        loading: boolean;
+        onCancel: () => void;
+        onSubmit: (e: React.FormEvent) => void;
+    }) => React.ReactNode;
 }
 
 export default function EventForm({
@@ -36,6 +42,7 @@ export default function EventForm({
     showObjectSelector = true,
     onCancel,
     onSubmit,
+    renderActions,
 }: EventFormProps) {
     const [objectDefinition, setObjectDefinition] = useState<ObjectDefinition | undefined>(initialObject);
     const [title, setTitle] = useState(initialTitle ?? '');
@@ -204,23 +211,31 @@ export default function EventForm({
                 </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    disabled={loading}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                    {loading ? 'Saving...' : 'Save'}
-                </button>
-            </div>
+            {error && (
+                <div className="text-sm text-red-700 bg-red-50 p-2 rounded mt-4">{error}</div>
+            )}
+
+            {renderActions ? (
+                renderActions({ loading, onCancel, onSubmit: handleSubmit })
+            ) : (
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        disabled={loading}
+                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        {loading ? 'Saving...' : 'Save'}
+                    </button>
+                </div>
+            )}
         </form>
     );
 }

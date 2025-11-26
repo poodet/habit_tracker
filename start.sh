@@ -1,2 +1,2 @@
-docker-compose up -d
-docker-compose logs -f backend frontend -t
+docker compose up -d
+docker compose logs -f backend frontend -t

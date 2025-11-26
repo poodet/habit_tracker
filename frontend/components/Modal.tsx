@@ -8,6 +8,7 @@ type ModalProps = {
     onClose: () => void;
     title?: string;
     children?: React.ReactNode;
+    footer?: React.ReactNode;
     /** When true clicking the backdrop closes the modal (default: true) */
     closeOnOverlayClick?: boolean;
     /** Additional classes for the modal panel */
@@ -19,6 +20,7 @@ export default function Modal({
     onClose,
     title,
     children,
+    footer,
     closeOnOverlayClick = true,
     className,
 }: ModalProps) {
@@ -76,9 +78,9 @@ export default function Modal({
                 ref={panelRef}
                 tabIndex={-1}
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-auto outline-none ${className ?? ''}`}
+                className={`bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col outline-none ${className ?? ''}`}
             >
-                <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
                     {title ? (
                         <h3 id="modal-title" className="text-lg font-semibold">
                             {title}
@@ -95,7 +97,15 @@ export default function Modal({
                     </button>
                 </div>
 
-                <div className="p-4">{children}</div>
+                <div className="p-4 overflow-y-auto flex-1">
+                    {children}
+                </div>
+
+                {footer && (
+                    <div className="flex gap-3 px-4 pb-4 pt-3 border-t flex-shrink-0">
+                        {footer}
+                    </div>
+                )}
             </div>
         </div>
     );
