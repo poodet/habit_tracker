@@ -1,0 +1,322 @@
+name: Optimized CI Pipeline
+
+on:
+  push:
+    branches: [ main, dev, develop ]
+  pull_request:
+    branches: [ main, dev, develop ]
+
+# Cancel previous runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Detect what changed to run only necessary tests
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'package.json'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - 'package.json'
+              - '.github/workflows/**'
+            docker:
+              - 'docker-compose.yml'
+              - '**/Dockerfile'
+
+  # Backend tests (fast, no Docker)
+  backend-test:
+    name: Backend Tests
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    
+    services:
+      # Use GitHub Actions built-in services (faster than Docker Compose)
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Lint backend code
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: Run unit tests
+        working-directory: ./backend
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test-secret-key-for-ci
+          JWT_EXPIRATION: '1h'
+        run: npm test
+
+      # - name: Run E2E tests
+      #   working-directory: ./backend
+      #   env:
+      #     POSTGRES_HOST: localhost
+      #     POSTGRES_PORT: 5432
+      #     POSTGRES_USER: test_user
+      #     POSTGRES_PASSWORD: test_password
+      #     POSTGRES_DB: test_db
+      #     REDIS_HOST: localhost
+      #     REDIS_PORT: 6379
+      #     JWT_SECRET: test-secret-key-for-ci
+      #     JWT_EXPIRATION: '1h'
+      #   run: npm run test:e2e || echo "E2E tests not configured yet"
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          fail_ci_if_error: false
+
+  # Frontend tests (with Docker layer caching for consistency)
+  frontend-test:
+    name: Frontend Tests  
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-frontend-${{ hashFiles('frontend/package-lock.json', 'frontend/Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-frontend-
+
+      - name: Build frontend image with cache
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          load: true
+          tags: frontend-test:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          build-args: |
+            NODE_ENV=test
+
+      # Move cache to avoid growing indefinitely
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Run frontend tests
+        run: |
+          mkdir -p ${{ github.workspace }}/frontend/coverage
+          docker run --rm \
+            -e CI=true \
+            -v ${{ github.workspace }}/frontend/coverage:/app/coverage \
+            frontend-test:latest \
+            npm test -- --watchAll=false --coverage
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
+
+  # Integration tests (only on main branch or when both changed)
+  integration-test:
+    name: Integration Tests
+    needs: [changes, backend-test, frontend-test]
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (needs.changes.outputs.backend == 'true' && needs.changes.outputs.frontend == 'true')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          POSTGRES_USER=test_user
+          POSTGRES_PASSWORD=test_password
+          POSTGRES_DB=test_db
+          POSTGRES_PORT=5433
+          REDIS_PORT=6380
+          BACKEND_PORT=3001
+          JWT_SECRET=test-secret-key
+          JWT_EXPIRATION=1h
+          NEXT_PUBLIC_API_URL=http://localhost:3001/api
+          EOF
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build all services
+        run: docker compose build
+
+      - name: Start all services
+        run: docker compose up -d
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for backend..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3001/api/health 2>/dev/null; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Check service health
+        run: |
+          echo "Checking backend..."
+          curl -f http://localhost:3001/api/health || exit 1
+          
+          echo "Checking frontend..."
+          curl -f http://localhost:3000 || exit 1
+
+      - name: Run integration tests
+        run: |
+          # Add your integration tests here
+          echo "Integration tests would run here"
+          # docker compose exec -T backend npm run test:integration || true
+          # docker compose exec -T frontend npm run test:integration || true
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend
+          echo "=== Postgres Logs ==="
+          docker compose logs postgres
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # Summary job that reports results
+  ci-summary:
+    name: CI Summary
+    needs: [backend-test, frontend-test]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check test results
+        run: |
+          echo "Backend tests: ${{ needs.backend-test.result }}"
+          echo "Frontend tests: ${{ needs.frontend-test.result }}"
+          
+          if [ "${{ needs.backend-test.result }}" == "failure" ] || [ "${{ needs.frontend-test.result }}" == "failure" ]; then
+            echo "❌ Some tests failed"
+            exit 1
+          else
+            echo "✅ All tests passed!"
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const backend = '${{ needs.backend-test.result }}';
+            const frontend = '${{ needs.frontend-test.result }}';
+            
+            const backendIcon = backend === 'success' ? '✅' : backend === 'skipped' ? '⏭️' : '❌';
+            const frontendIcon = frontend === 'success' ? '✅' : frontend === 'skipped' ? '⏭️' : '❌';
+            
+            const comment = `## 🧪 CI Test Results
+            
+            | Test Suite | Result |
+            |-----------|--------|
+            | Backend | ${backendIcon} ${backend} |
+            | Frontend | ${frontendIcon} ${frontend} |
+            
+            ${backend === 'success' && frontend === 'success' ? '🎉 All tests passed!' : ''}
+            ${backend === 'skipped' || frontend === 'skipped' ? '⚡ Some tests were skipped (no changes detected)' : ''}
+            
+            <details>
+            <summary>View Details</summary>
+            
+            - Backend tests run when \`backend/**\` files change
+            - Frontend tests run when \`frontend/**\` files change
+            - Integration tests run on main branch or when both change
+            
+            </details>`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
