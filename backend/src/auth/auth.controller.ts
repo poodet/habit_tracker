@@ -8,17 +8,17 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
-    @Post('register')
-    @ApiOperation({ summary: 'Register a new user' })
-    register(@Body() registerDto: RegisterDto) {
-        return this.authService.register(registerDto);
-    }
+  @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
 
-    @Post('login')
-    @ApiOperation({ summary: 'Login with email and password' })
-    login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
-    }
+  @Post('login')
+  @ApiOperation({ summary: 'Login with email and password' })
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
 }

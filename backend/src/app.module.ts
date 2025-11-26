@@ -10,29 +10,29 @@ import { ObjectDefinition } from './object-definitions/entities/object-definitio
 import { CalendarEvent } from './calendar-events/entities/calendar-event.entity';
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-        }),
-        TypeOrmModule.forRootAsync({
-            imports: [ConfigModule],
-            useFactory: (configService: ConfigService) => ({
-                type: 'postgres',
-                host: configService.get('POSTGRES_HOST'),
-                port: configService.get('POSTGRES_PORT'),
-                username: configService.get('POSTGRES_USER'),
-                password: configService.get('POSTGRES_PASSWORD'),
-                database: configService.get('POSTGRES_DB'),
-                entities: [User, ObjectDefinition, CalendarEvent],
-                synchronize: configService.get('NODE_ENV') === 'development', // Only in dev!
-                logging: configService.get('NODE_ENV') === 'development',
-            }),
-            inject: [ConfigService],
-        }),
-        AuthModule,
-        UsersModule,
-        ObjectDefinitionsModule,
-        CalendarEventsModule,
-    ],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('POSTGRES_HOST'),
+        port: configService.get('POSTGRES_PORT'),
+        username: configService.get('POSTGRES_USER'),
+        password: configService.get('POSTGRES_PASSWORD'),
+        database: configService.get('POSTGRES_DB'),
+        entities: [User, ObjectDefinition, CalendarEvent],
+        synchronize: configService.get('NODE_ENV') === 'development', // Only in dev!
+        logging: configService.get('NODE_ENV') === 'development',
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
+    UsersModule,
+    ObjectDefinitionsModule,
+    CalendarEventsModule,
+  ],
 })
-export class AppModule { }
+export class AppModule {}
