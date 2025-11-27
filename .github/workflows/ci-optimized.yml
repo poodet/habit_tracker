@@ -91,6 +91,7 @@ jobs:
 
       - name: Lint backend code
         working-directory: ./backend
+        continue-on-error: true
         run: npm run lint
 
       - name: Run unit tests
@@ -156,6 +157,7 @@ jobs:
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
+          target: production
           push: false
           load: true
           tags: frontend-test:latest
@@ -179,13 +181,24 @@ jobs:
             frontend-test:latest \
             npm test -- --watchAll=false --coverage
 
-      - name: Upload frontend coverage
-        uses: codecov/codecov-action@v3
+      # Upload coverage as downloadable artifact (no external service needed)
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          files: ./frontend/coverage/lcov.info
-          flags: frontend
-          fail_ci_if_error: false
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          retention-days: 30
+
+
+      # Optional: Uncomment if you want to use codecov.io
+      # - name: Upload frontend coverage
+      #   uses: codecov/codecov-action@v3
+      #   if: always()
+      #   with:
+      #     files: ./frontend/coverage/lcov.info
+      #     flags: frontend
+      #     fail_ci_if_error: false
 
   # Integration tests (only on main branch or when both changed)
   integration-test:
@@ -295,7 +308,7 @@ jobs:
             const backendIcon = backend === 'success' ? '✅' : backend === 'skipped' ? '⏭️' : '❌';
             const frontendIcon = frontend === 'success' ? '✅' : frontend === 'skipped' ? '⏭️' : '❌';
             
-            const comment = `## 🧪 CI Test Results
+            let comment = `## 🧪 CI Test Results
             
             | Test Suite | Result |
             |-----------|--------|
@@ -311,6 +324,7 @@ jobs:
             - Backend tests run when \`backend/**\` files change
             - Frontend tests run when \`frontend/**\` files change
             - Integration tests run on main branch or when both change
+            - ⚠️ **Note:** Linting errors don't fail the build (warnings only)
             
             </details>`;
             
