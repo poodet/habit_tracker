@@ -28,15 +28,14 @@ jobs:
         uses: dorny/paths-filter@v2
         id: filter
         with:
+          # Useful to detect changes against current branch's most recent commit instead
+          # of the default main branch
+          base: ${{ github.ref }}
           filters: |
             backend:
               - 'backend/**'
-              - 'package.json'
-              - '.github/workflows/**'
             frontend:
               - 'frontend/**'
-              - 'package.json'
-              - '.github/workflows/**'
             docker:
               - 'docker-compose.yml'
               - '**/Dockerfile'
@@ -251,7 +250,7 @@ jobs:
       - name: Check service health
         run: |
           echo "Checking backend..."
-          curl -f http://localhost:3001/api/health || exit 1
+          curl -f http://localhost:3001/api/docs || exit 1
           
           echo "Checking frontend..."
           curl -f http://localhost:3000 || exit 1
